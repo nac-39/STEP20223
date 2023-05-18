@@ -39,15 +39,30 @@ def get_data(file_name):
 
 
 def search_word(target, word_list):
-    answers = []
+    """辞書からtargetから作れるアナグラムを探す
+
+    Args:
+        target (Counter(str)): アナグラムを作りたい文字列
+        word_list (list[Tuple(Counter(str), str)]): 辞書
+
+    Returns:
+        str: 一番スコアが高いアナグラム
+    """
+    answer = ""
     for word in word_list:
-        flag = True
+        # アナグラムを作れるかどうか調べる
         for key, value in word[0].items():
+            flag = True
             if not (key in target) or target[key] < value:
                 flag = False
+                break
+        # アナグラムを作れる場合、word_listがスコアが高い順に並んでいるので、
+        # 最初に見つかったものが一番スコアが高いのが保証される。
+        # 自分では思いつかなかったけど他の人のを真似しました
         if flag:
-            answers.append(word[1])
-    return answers
+            answer = word[1]
+            break
+    return answer
 
 
 def get_counted_dictionary(dictionary):
@@ -61,9 +76,11 @@ def get_counted_dictionary(dictionary):
 
     Tests:
     >>> get_counted_dictionary(['a', 'ab', 'abcc', 'aaaaaaaaaaaaaabb'])
-    {'small': [(Counter({'a': 1}), 'a'), (Counter({'a': 1, 'b': 1}), 'ab'), (Counter({'c': 2, 'a': 1, 'b': 1}), 'abcc'), (Counter({'a': 14, 'b': 2}), 'aaaaaaaaaaaaaabb')], 'normal': [(Counter({'a': 1}), 'a'), (Counter({'a': 1, 'b': 1}), 'ab'), (Counter({'c': 2, 'a': 1, 'b': 1}), 'abcc'), (Counter({'a': 14, 'b': 2}), 'aaaaaaaaaaaaaabb')]}
+    {'small': [(Counter({'a': 14, 'b': 2}), 'aaaaaaaaaaaaaabb'), (Counter({'c': 2, 'a': 1, 'b': 1}), 'abcc'), (Counter({'a': 1, 'b': 1}), 'ab'), (Counter({'a': 1}), 'a')], 'normal': [(Counter({'a': 14, 'b': 2}), 'aaaaaaaaaaaaaabb'), (Counter({'c': 2, 'a': 1, 'b': 1}), 'abcc'), (Counter({'a': 1, 'b': 1}), 'ab'), (Counter({'a': 1}), 'a')]}
     """
     new_dictionary = []
+    # 最初に辞書の方もスコアが高い順に並べておく。
+    dictionary = sorted(dictionary, key=check_score, reverse=True)
     for word in dictionary:
         new_dictionary.append(
             (Counter(word), word)
@@ -84,21 +101,21 @@ def search_anagram(word, dictionary):
 
     Returns:
         list[str]: wordの一部を使ったアナグラム全て
-    
+
     Tests:
     >>> search_anagram('aahlpooo', [(Counter('alpha'), 'alpha')])
-    ['alpha']
+    'alpha'
     >>> search_anagram('', [(Counter('alpha'), 'alpha')])
-    []
+    ''
     """
     counted_word = Counter(word)
-    anagrams = search_word(counted_word, dictionary)
-    return anagrams
+    anagram = search_word(counted_word, dictionary)
+    return anagram
 
 
 def main():
     """与えられた文字列の一部を使ったAnagramを辞書ファイルから探して全て返す"""
-    data_files = ["small", "medium"]
+    data_files = ["small", "medium", "large"]
     _dictionary = get_dictionary()
     for data_file in data_files:
         res = []
@@ -111,13 +128,12 @@ def main():
         # 探索
         start_time = time.perf_counter()
         for i, d in enumerate(data):
-            anagrams = search_anagram(d, dictionary)
-            ans = max(anagrams, key=check_score, default=[])
+            anagram = search_anagram(d, dictionary)
             if i % 100 == 0:
-                print(i, ans)
-            res.append(ans)
+                print(i, anagram)
+            res.append(anagram)
         end_time = time.perf_counter()
-        
+
         # 結果を出力
         save_answer_file(data_file, res)
         with open("time.txt", "a") as f:
