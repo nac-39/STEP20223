@@ -1,6 +1,5 @@
 from pathlib import Path
 import time
-from collections import Counter
 
 
 def save_answer_file(file_name, answers):
@@ -39,91 +38,66 @@ def get_data(file_name):
 
 
 def search_word(target, word_list):
-    """辞書からtargetから作れるアナグラムを探す
-
-    Args:
-        target (Counter(str)): アナグラムを作りたい文字列
-        word_list (list[Tuple(Counter(str), str)]): 辞書
-
-    Returns:
-        str: 一番スコアが高いアナグラム
-    """
     answer = ""
     for word in word_list:
-        # アナグラムを作れるかどうか調べる
-        for key, value in word[0].items():
-            flag = True
-            if not (key in target) or target[key] < value:
-                flag = False
-                break
-        # アナグラムを作れる場合、word_listがスコアが高い順に並んでいるので、
-        # 最初に見つかったものが一番スコアが高いのが保証される。
-        # 自分では思いつかなかったけど他の人のを真似しました
-        if flag:
+        if all([v >= word[0][i] for i, v in enumerate(target)]):
             answer = word[1]
             break
     return answer
 
 
-def get_counted_dictionary(dictionary):
-    """辞書ファイルを受け取り、文字数を数えて返す
+def get_letter_count(word):
+    """文字列wordを受け取り、アルファベットがそれぞれ何個入っているか返す
 
     Args:
-        dictionary (list[str]): 辞書ファイルの中身
-
-    Returns:
-        dict: 文字数が16文字以下の辞書と、全部入りの辞書
+        word (str): 文字列（アルファベットのみ）
 
     Tests:
-    >>> get_counted_dictionary(['a', 'ab', 'abcc', 'aaaaaaaaaaaaaabb'])
-    [(Counter({'a': 14, 'b': 2}), 'aaaaaaaaaaaaaabb'), (Counter({'c': 2, 'a': 1, 'b': 1}), 'abcc'), (Counter({'a': 1, 'b': 1}), 'ab'), (Counter({'a': 1}), 'a')]
+    >>> get_letter_count('a')
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    >>> get_letter_count('z')
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
     """
+    alphabet = [0] * 26
+    for w in word:
+        alphabet[ord(w) - 97] += 1  # a->0, b->1...z->25になる
+    return alphabet
+
+
+def get_sorted_dictionary(dictionary):
     new_dictionary = []
-    # 最初に辞書の方もスコアが高い順に並べておく。
-    dictionary = sorted(dictionary, key=check_score, reverse=True)
     for word in dictionary:
         new_dictionary.append(
-            (Counter(word), word)
+            [get_letter_count(word), word]
         )  # (文字カウント済み, 元の文字)
+    new_dictionary = sorted(
+        new_dictionary, key=lambda x: check_score(x[1]), reverse=True)
     return new_dictionary
 
 
 def search_anagram(word, dictionary):
-    """辞書からwordの一部を使ったアナグラムを探す
-
-    Args:
-        word (str): 探したい文字列  
-        dictionary list[(Tuple(Counter, str))]: 辞書
-
-    Returns:
-        list[str]: wordの一部を使ったアナグラム全て
-
-    Tests:
-    >>> search_anagram('aahlpooo', [(Counter('alpha'), 'alpha')])
-    'alpha'
-    >>> search_anagram('', [(Counter('alpha'), 'alpha')])
-    ''
-    """
-    counted_word = Counter(word)
-    anagram = search_word(counted_word, dictionary)
-    return anagram
+    sorted_word = get_letter_count(word)
+    anagrams = search_word(sorted_word, dictionary)
+    return anagrams
 
 
 def main():
     """与えられた文字列の一部を使ったAnagramを辞書ファイルから探して全て返す"""
-    data_files = ["small", "medium"]
-    dictionary = get_counted_dictionary(get_dictionary())
+    data_files = ["small", "medium", "large"]
+    dictionary = get_sorted_dictionary(get_dictionary())
     for data_file in data_files:
         res = []
         data = get_data(data_file + ".txt")
-
+        count = 0
         # 探索
         start_time = time.perf_counter()
-        for i, d in enumerate(data):
-            anagram = search_anagram(d, dictionary)
-            if i % 100 == 0:
-                print(i, anagram)
-            res.append(anagram)
+        for data in get_data(data_file + ".txt"):
+            anagram = search_anagram(data, dictionary)
+            ans = anagram
+            if count % 100 == 0:
+                print(count, ans)
+            res.append(ans)
+            count += 1
         end_time = time.perf_counter()
 
         # 結果を出力
