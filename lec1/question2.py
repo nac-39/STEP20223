@@ -1,4 +1,13 @@
 from pathlib import Path
+import time
+
+def check_score(word):
+    SCORES = [1, 3, 2, 2, 1, 3, 3, 1, 1, 4, 4, 2,
+              2, 1, 1, 3, 4, 1, 1, 1, 2, 3, 3, 4, 3, 4]
+    score = 0
+    for character in list(word):
+        score += SCORES[ord(character) - ord('a')]
+    return score
 
 
 def get_dictionary():
@@ -39,12 +48,11 @@ def get_letter_count(word):
     >>> get_letter_count('z')
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
     """
-    orders = [ord(w) - 97 for w in word]  # a->0, b->1...z->25になる
     alphabet = [0] * 26
-    for o in orders:
-        if o < 0 or o > 26:
+    for w in word:
+        if ord(w) < 97 or 122 < ord(w):
             continue
-        alphabet[o] += 1
+        alphabet[ord(w) - 97] += 1  # a->0, b->1...z->25になる
     return alphabet
 
 
@@ -87,20 +95,25 @@ def main(target):
         return []
     dictionary = get_dictionary()
     res = search_anagram(str(target), dictionary)
-    return max(res, key=len, default=[])
+    return max(res, key=check_score, default=[])
 
 
 if __name__ == "__main__":
     res = []
-    data_files = ["large"]
+    data_files = ["small"]
     count = 0
     dictionary = get_dictionary()
     for data_file in data_files:
+        start_time = time.perf_counter()
         for data in get_data(data_file + ".txt"):
-            ans = max(search_anagram(data, dictionary), key=len, default=[])
+            anagrams = search_anagram(data, dictionary)
+            ans = max(anagrams, key=check_score, default=[])
             print(count, ans)
             res.append(ans)
             count += 1
-        with open(data_file + "_answer.txt", "w") as f:
+        end_time = time.perf_counter()
+        answer_file = Path(__file__).parent /  Path("anagrams/") / Path(data_file + "_answer.txt")
+        with open(answer_file, "w") as f:
             for r in res:
                 f.write(str(r) + "\n")
+            print("time: " + str(end_time - start_time) + "s")
