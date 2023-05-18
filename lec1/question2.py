@@ -73,32 +73,8 @@ def search_anagram(word, dictionary):
     return anagrams
 
 
-def main(target):
-    """与えられた文字列のAnagramを辞書ファイルから探して全て返す
-    tests:
-    >>> main('exchangeability') # 長めの辞書にある単語
-    'exchangeability'
-    >>> main('mechakuchanagaaaaaaitango') # 長い
-    []
-    >>> main('a') # 1文字
-    'electroencephalograph'
-    >>> main('zzz')  # /.*z.*z.*z/にマッチする単語
-    'razzmatazz'
-    >>> main('1') # 数字
-    []
-    >>> main('') # 空文字列
-    []
-    >>> main(11) # 数字
-    []
-    """
-    if any([ord(w) < 97 or 122 < ord(w) for w in str(target)]) or len(target) == 0:  # アルファベット以外を排除
-        return []
-    dictionary = get_dictionary()
-    res = search_anagram(str(target), dictionary)
-    return max(res, key=check_score, default=[])
-
-
-if __name__ == "__main__":
+def main():
+    """与えられた文字列の一部を使ったAnagramを辞書ファイルから探して全て返す"""
     res = []
     data_files = ["small"]
     count = 0
@@ -117,3 +93,9 @@ if __name__ == "__main__":
             for r in res:
                 f.write(str(r) + "\n")
             print("time: " + str(end_time - start_time) + "s")
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+    main()
