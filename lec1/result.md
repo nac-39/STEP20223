@@ -32,3 +32,8 @@ time: 287.2076153750095s
 large:
 The number of words in large.txt and large_answer.txt doesn't match.
 time: 3146.746209332996s
+
+4. 先に辞書を並べ替えるようにした
+small time: 0.014160958002321422s
+medium time: 2.130765624984633s
+large time: 2.771617791004246s
