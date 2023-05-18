@@ -76,7 +76,7 @@ def get_counted_dictionary(dictionary):
 
     Tests:
     >>> get_counted_dictionary(['a', 'ab', 'abcc', 'aaaaaaaaaaaaaabb'])
-    {'small': [(Counter({'a': 14, 'b': 2}), 'aaaaaaaaaaaaaabb'), (Counter({'c': 2, 'a': 1, 'b': 1}), 'abcc'), (Counter({'a': 1, 'b': 1}), 'ab'), (Counter({'a': 1}), 'a')], 'normal': [(Counter({'a': 14, 'b': 2}), 'aaaaaaaaaaaaaabb'), (Counter({'c': 2, 'a': 1, 'b': 1}), 'abcc'), (Counter({'a': 1, 'b': 1}), 'ab'), (Counter({'a': 1}), 'a')]}
+    [(Counter({'a': 14, 'b': 2}), 'aaaaaaaaaaaaaabb'), (Counter({'c': 2, 'a': 1, 'b': 1}), 'abcc'), (Counter({'a': 1, 'b': 1}), 'ab'), (Counter({'a': 1}), 'a')]
     """
     new_dictionary = []
     # 最初に辞書の方もスコアが高い順に並べておく。
@@ -85,11 +85,7 @@ def get_counted_dictionary(dictionary):
         new_dictionary.append(
             (Counter(word), word)
         )  # (文字カウント済み, 元の文字)
-    small_dictionary = [d for d in new_dictionary if len(d[1]) <= 16]
-    return {
-        "small": small_dictionary,  # 188/512に削減
-        "normal": new_dictionary
-    }
+    return new_dictionary
 
 
 def search_anagram(word, dictionary):
@@ -115,14 +111,10 @@ def search_anagram(word, dictionary):
 
 def main():
     """与えられた文字列の一部を使ったAnagramを辞書ファイルから探して全て返す"""
-    data_files = ["small", "medium", "large"]
-    _dictionary = get_dictionary()
+    data_files = ["small", "medium"]
+    dictionary = get_counted_dictionary(get_dictionary())
     for data_file in data_files:
         res = []
-        if data_file == "small" or data_file == "medium":
-            dictionary = get_counted_dictionary(_dictionary)["small"]
-        else:
-            dictionary = get_counted_dictionary(_dictionary)["normal"]
         data = get_data(data_file + ".txt")
 
         # 探索
