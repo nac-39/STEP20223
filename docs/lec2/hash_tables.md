@@ -16,26 +16,6 @@ $ python3 lec2/hash_tables.py
 - `HashTable.buckets`には`Item`の先頭の要素だけが入っている。
 - 消したい`Item`が先頭の時とそうでない時で処理を分けないといけない。
 
-- 参照渡し値渡し（詰まった）  
-  hash_tables.py:L133 で「メモ: item には self.buckets[bucket_index]の値が入っているものとして考える。」このように書いているが、本当は item には参照が入っている。  
-  例えば、while 文の中で item を次のように new_item で書き換えようとすると、
-
-  ```python
-  ...
-  new_item = Item("key", "value", None)
-  item = new_item
-  ```
-
-  この場合は`HashTable.buckets`の中に入っている`item`は書き換えられず、別の領域に新しく`item`が生成される。多分。
-
-  でも、item の next だけを書き換える時は別の領域に`item`を作ることなく、`item.next`の値だけを書き換えている？からうまく動いている？
-
-  どうやら、`item = hoge`と代入すると`item`の id は変わるが、`item.next = hoge`とすると`item`の id は変わらないらしい。
-
-  C や Rust で書けたらここでは悩まないはず………；；
-
-  参考： [https://www.javadrive.jp/python/userfunc/index3.html#section1](https://www.javadrive.jp/python/userfunc/index3.html#section1)
-
 ## `performance_test`の結果
 
 - 速度向上のために何もしてない時
@@ -89,6 +69,8 @@ $ python3 lec2/hash_tables.py
 
 <details>
 <summary>結果</summary>
+
+```plaintext
 0 1.574800  
 1 2.920624  
 2 3.277485  
@@ -134,16 +116,19 @@ $ python3 lec2/hash_tables.py
 42 23.638033  
 43 24.302826  
 44 25.098593  
+```
 </details>
 
 - アナグラムのハッシュ値が被らないようにした時  
 ハッシュ値を、`素数[文字列の中でのインデックス] * ord(文字)` の和にした。こうすればアナグラムは同じハッシュ値にならないはず。
-特にテーブルが大きい時は速くなったけど、たまにめっちゃ遅い（なんで…？）。  
+結果、特にテーブルが大きい時は速くなったけど、たまにめっちゃ遅い（なんで…？）。  
 複数回実験しても同じ回が遅い。4, 6, 8, 11, 16, 23, 32、46、64が遅い？。(4,6は数が少ないからそこまででもないが)  
-大体、2の階乗と $3\times 2^n$ が遅いっぽい？なんで？
+大体、 $2^n$ と $3\times 2^n$ が遅いっぽい？理由がよくわからない
 
 <details>
 <summary>結果</summary>
+
+```plaintext
 0 1.379983  
 1 2.490573  
 2 2.684923  
@@ -244,4 +229,29 @@ $ python3 lec2/hash_tables.py
 97 5.137390  
 98 5.247458  
 99 5.333102  
+```
+
 </details>
+
+
+## 詰まった記録
+
+- 参照渡し値渡し（Pythonの仕様がわからなくて詰まった）  
+  hash_tables.py:L133 で「メモ: item には self.buckets[bucket_index]の値が入っているものとして考える。」このように書いているが、本当は item には参照が入っている。  
+  例えば、while 文の中で item を次のように new_item で書き換えようとすると、
+
+  ```python
+  ...
+  new_item = Item("key", "value", None)
+  item = new_item
+  ```
+
+  この場合は`HashTable.buckets`の中に入っている`item`は書き換えられず、別の領域に新しく`item`が生成される。多分。
+
+  でも、item の next だけを書き換える時は別の領域に`item`を作ることなく、`item.next`の値だけを書き換えている？からうまく動いている？
+
+  どうやら、`item = hoge`と代入すると`item`の id は変わるが、`item.next = hoge`とすると`item`の id は変わらないらしい。
+
+  C や Rust で書けたらここでは悩まないはず………；；
+
+  参考： [https://www.javadrive.jp/python/userfunc/index3.html#section1](https://www.javadrive.jp/python/userfunc/index3.html#section1)
