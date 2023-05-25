@@ -15,6 +15,25 @@ def print_item(item, text=""):
     print(text, item.key, item.value, item.next)
 
 
+def primes():
+    """素数のジェネレータ"""
+    def integers_starting_from(n):
+        while True:
+            yield n
+            n += 1
+
+    def is_prime(n):
+        for ps in primes():
+            if ps * ps > n:
+                return True
+            elif n % ps == 0:
+                return False
+    yield 2
+    for n in integers_starting_from(3):
+        if is_prime(n):
+            yield n
+
+
 def calculate_hash(key):
     """Hash function.
 
@@ -68,6 +87,41 @@ class HashTable:
         self.buckets = [None] * self.bucket_size
         self.item_count = 0
 
+    def show_all_items(self):  # debug
+        print(f"size: {self.bucket_size}, count: {self.item_count}: ", end="")
+        for item in self.buckets:
+            print("{", end="")
+            while item:
+                print(item.key, item.value, id(item), end=",")
+                item = item.next
+            print("}", end=",")
+        print()
+
+    def renewal_bucket(self):
+        """要素数がbucket_sizeの70%を超えたら拡張し、30%を下回っていたら縮小する"""
+        if self.item_count >= self.bucket_size * 0.7:
+            min_new_bucket_size = self.item_count * 2
+        elif self.item_count <= self.bucket_size * 0.3:
+            min_new_bucket_size = self.item_count // 2
+        else:
+            return
+        for p in primes():
+            if p > min_new_bucket_size:
+                new_bucket_size = p
+                break
+        # バケットを作り直す
+        new_buckets = [None] * new_bucket_size
+        for i in range(self.bucket_size):  # 元のバケットサイズ
+            item = self.buckets[i]
+            while item:
+                bucket_index = calculate_hash(item.key) % new_bucket_size
+                new_item = Item(item.key, item.value,
+                                new_buckets[bucket_index])
+                new_buckets[bucket_index] = new_item
+                item = item.next
+        self.buckets = new_buckets
+        self.bucket_size = new_bucket_size
+
     def put(self, key, value):
         """Put an item to the hash table. If the key already exists, the
         corresponding value is updated to a new value.
@@ -89,6 +143,7 @@ class HashTable:
         new_item = Item(key, value, self.buckets[bucket_index])
         self.buckets[bucket_index] = new_item
         self.item_count += 1
+        self.renewal_bucket()  # バケットを最適化
         return True
 
     def get(self, key):
@@ -120,27 +175,30 @@ class HashTable:
         if self.buckets[bucket_index] is None:
             return False
         item = self.buckets[bucket_index]  # 単方向リストの先頭を取り出してる
-        
-        if item.key == key: # 消したいitemが単方向リストのトップの時
+
+        if item.key == key:  # 消したいitemが単方向リストのトップの時
             if item.next:
                 self.buckets[bucket_index] = item.next
             else:
                 self.buckets[bucket_index] = None
             self.item_count -= 1
+            self.renewal_bucket()
             return True
 
         # 消したいitemが単方向リストの２番目以降の時
         # メモ: itemにはself.buckets[bucket_index]の値が入っているものとして考える。(と考えてたけど違うかも)
-        while item: 
-            if item.key == key:
+        while item:
+            # 消したいItemの一個前と一個後を繋ぐ
+            if item.next and item.next.key == key:
                 if item.next and item.next.next:
-                    item.next == item.next.next
+                    item.next = item.next.next
                 else:
                     item.next = None
-                break
+                self.item_count -= 1
+                self.renewal_bucket()
+                return True
             item = item.next
-        self.item_count -= 1
-        return True
+        return False
 
     def size(self):
         """Return the total number of items in the hash table.
@@ -217,13 +275,6 @@ def functional_test():
     assert hash_table.get("cba") == (6, True)
     assert hash_table.size() == 6
 
-    print(hash_table.buckets)
-    for item in hash_table.buckets:
-        if item:
-            while item:
-                print(item.key, item.value)
-                item = item.next
-
     assert hash_table.delete("abc") == True
     assert hash_table.delete("cba") == True
     assert hash_table.delete("bac") == True
@@ -271,15 +322,5 @@ def performance_test():
 
 
 if __name__ == "__main__":
-    # h = HashTable()
-    # print(h.put("aa", "value"))
-    # print(h.get("aa"))
-    # print(h.delete("aa"))
-    # print(h.get("aa"))
-    # b = h.buckets[calculate_hash("aa") % h.bucket_size]
-    # while b:
-    #     print("after delete: ", b.key, b.value, b.next)
-    #     b = b.next
-
     functional_test()
     performance_test()
