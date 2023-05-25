@@ -34,6 +34,15 @@ def primes():
             yield n
 
 
+many_primes = []
+c = 0
+for i in primes():
+    many_primes.append(i)
+    c += 1
+    if c == 1000:
+        break
+
+
 def calculate_hash(key):
     """Hash function.
 
@@ -46,8 +55,8 @@ def calculate_hash(key):
     assert type(key) == str
     # Note: This is not a good hash function. Do you see why?
     hash = 0
-    for i in key:
-        hash += ord(i)
+    for i, k in enumerate(key):
+        hash += many_primes[i] * ord(k)  # 素数×文字の数字
     return hash
 
 
