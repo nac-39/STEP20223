@@ -1,5 +1,7 @@
 import random
 import time
+from math import sqrt
+import bisect
 
 ###########################################################################
 #                                                                         #
@@ -23,11 +25,17 @@ def primes():
             n += 1
 
     def is_prime(n):
-        for ps in primes():
-            if ps * ps > n:
-                return True
-            elif n % ps == 0:
+        if n < 2:
+            return False
+        elif n == 2:
+            return False
+        elif n % 2 == 0:
+            return False
+        sqrt_n = sqrt(n)
+        for i in range(3, int(sqrt_n+1), 2):
+            if n % i == 0:
                 return False
+        return True
     yield 2
     for n in integers_starting_from(3):
         if is_prime(n):
@@ -36,11 +44,14 @@ def primes():
 
 many_primes = []
 c = 0
+print("start generate primes...")
 for i in primes():
     many_primes.append(i)
     c += 1
-    if c == 1000:
+    if c == 10000:
         break
+print(many_primes[-1])
+print("end generate primes!")
 
 
 def calculate_hash(key):
@@ -114,10 +125,14 @@ class HashTable:
             min_new_bucket_size = self.item_count // 2
         else:
             return
-        for p in primes():
-            if p > min_new_bucket_size:
-                new_bucket_size = p
-                break
+
+        # バケットサイズが大きくなりすぎたら、素数を使うのを諦めて奇数にする
+        if min_new_bucket_size > many_primes[-1]:
+            new_bucket_size = min_new_bucket_size if min_new_bucket_size % 2 == 0 else min_new_bucket_size + 1
+        else:
+            prime_index = bisect.bisect(many_primes, min_new_bucket_size) # 二分探索で探索
+            new_bucket_size = many_primes[prime_index]
+
         # バケットを作り直す
         new_buckets = [None] * new_bucket_size
         for i in range(self.bucket_size):  # 元のバケットサイズ
