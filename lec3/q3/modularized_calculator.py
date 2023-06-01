@@ -227,9 +227,9 @@ def paren_evaluate(tokens):
     tokens = deepcopy(tokens)
     while index < len(tokens):
         if tokens[index]['type'] == "PAREN_START":
-            tmp_tokens = []
+            tmp_tokens = [] # ()の中の式を入れる
             paren_count = 0
-            tokens.pop(index)
+            tokens.pop(index) # (を削除
             # 一番外側かつ最初のかっこの中身のトークンを抽出
             while index < len(tokens):
                 looking_token = tokens.pop(index)
