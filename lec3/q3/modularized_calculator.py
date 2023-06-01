@@ -1,6 +1,31 @@
 #! /usr/bin/python3
 from copy import deepcopy
 
+# for debug
+def token_print(tokens, comment=""):
+    if comment:
+        print(comment + ": ", end="")
+    for token in tokens:
+        match token['type']:
+            case 'NUMBER':
+                print(str(token['number']) + " ", end="")
+            case 'PLUS':
+                print("+", end="")
+            case 'MINUS':
+                print("-", end="")
+            case 'MULTIPLY':
+                print("*", end="")
+            case 'DIVIDE':
+                print("/", end="")
+            case 'PAREN_START':
+                print("(", end="")
+            case 'PAREN_END':
+                print(")", end="")
+            case _:
+                print(token)
+    print()
+
+
 def read_number(line, index):
     number = 0
     while index < len(line) and line[index].isdigit():
@@ -147,7 +172,7 @@ def multiply_divide_evaluate(tokens):
                 case 'MINUS':
                     index += 1
                 case _:
-                    print('Invalid syntax')
+                    print('multiply_divide_evaluate(): Invalid syntax')
                     exit(1)
         index += 1
     return tokens
@@ -171,7 +196,8 @@ def plus_minus_evaluate(tokens):
             elif tokens[index - 1]['type'] == 'MINUS':
                 answer -= tokens[index]['number']
             else:
-                print('Invalid syntax')
+                print('plus_minus_evaluate(): Invalid syntax: ', end="")
+                token_print(tokens)
                 exit(1)
         index += 1
     return answer
@@ -195,11 +221,18 @@ def paren_evaluate(tokens):
     [{'type': 'PLUS'}, {'type': 'NUMBER', 'number': 3}, {'type': 'MULTIPLY'}, {'type': 'NUMBER', 'number': 3}]
     >>> paren_evaluate(tokenize('((1+2) * 3)')) 
     [{'type': 'PLUS'}, {'type': 'NUMBER', 'number': 9}]
+    >>> paren_evaluate(tokenize('((1+2) * 3)+1'))
+    [{'type': 'PLUS'}, {'type': 'NUMBER', 'number': 9}, {'type': 'PLUS'}, {'type': 'NUMBER', 'number': 1}]
+    >>> paren_evaluate(tokenize('1+((1+2) * 3)*1'))
+    [{'type': 'PLUS'}, {'type': 'NUMBER', 'number': 1}, {'type': 'PLUS'}, {'type': 'NUMBER', 'number': 9}, {'type': 'MULTIPLY'}, {'type': 'NUMBER', 'number': 1}]
+    >>> paren_evaluate(tokenize('(3*(2*(4+5)))'))
+    [{'type': 'PLUS'}, {'type': 'NUMBER', 'number': 54}]
     """
-    tmp_tokens = []
     index = 1
+    tokens = deepcopy(tokens)
     while index < len(tokens):
         if tokens[index]['type'] == "PAREN_START":
+            tmp_tokens = []
             paren_count = 0
             tokens.pop(index)
             # 一番外側かつ最初のかっこの中身のトークンを抽出
@@ -220,10 +253,15 @@ def paren_evaluate(tokens):
             tmp_answer = plus_minus_evaluate(
                 multiply_divide_evaluate(
                     paren_evaluate(tmp_tokens)))
-            tmp_sign = tokens.pop(index - 1)  # ()の前の符号を削除
-            ans_sign = 'PLUS' if tmp_answer >= 0 else 'MINUS'
-            sign = 'PLUS' if tmp_sign['type'] == ans_sign else 'MINUS'
-            tokens.insert(index - 1, {'type': sign})  # かっこの中のトークンを計算して置き換える
+            # tokens[index - 1] == 'PLUS' or tokens[index - 1] == 'MINUS'
+            # tokens[index - 1] == 'MULTIPLY' or tokens[index - 1] == 'DIVIDE'
+            # 2*(1+3) => 2*4
+            # 2*(1-3) => {'type': 'NUMBER', 'number': 1} {...MULTIPLY...} {'type': 'NUMBER', 'number': -2}
+            # tmp_sign = "PLUS"
+            # if tokens[index - 1] == 'PLUS' or tokens[index - 1] == 'MINUS':
+            #     tmp_sign = tokens.pop(index - 1)['type']
+            # ans_sign = 'PLUS' if tmp_answer >= 0 else 'MINUS'
+            # tokens.insert(index - 1, {'type': sign})  # かっこの中のトークンを計算して置き換える
             # かっこの中のトークンを計算して置き換える
             tokens.insert(index, {'type': 'NUMBER', 'number': tmp_answer})
         index += 1
@@ -231,7 +269,8 @@ def paren_evaluate(tokens):
 
 
 def evaluate(tokens):
-    answer = plus_minus_evaluate(multiply_divide_evaluate(tokens))
+    answer = plus_minus_evaluate(
+        multiply_divide_evaluate(paren_evaluate(tokens)))
     return answer
 
 
@@ -249,6 +288,10 @@ def test(line):
 # Add more tests to this function :)
 def run_test():
     print("==== Test started! ====")
+    test("1")
+    test("(((3)))")
+    test("+1+23+4")
+    test("(1+2)*(3+4)")
     test("1+2")
     test("1.0+2.1-3")
     test("1*2")
@@ -259,14 +302,19 @@ def run_test():
     test("3+4/2")
     test("3-4/2")
     test("3+4*2")
+    test("(1+2)*3")
+    test("(3*(2*(4+5)))")
+    test("(3/(2/(4+5)))")
+    test("(((4+5)*2)+1)")
+    test("(((4+5)*2)*1)")
+    test("(((4+5)*2))")
     print("==== Test finished! ====\n")
 
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()  # 関数ごとのテスト
-    # print(paren_evaluate(tokenize('((1+2) * 3)')))
-    # run_test()
+    run_test()
 
     # while True:
     #     print('> ', end="")
