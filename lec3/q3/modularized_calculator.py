@@ -1,29 +1,39 @@
 #! /usr/bin/python3
 from copy import deepcopy
 
-# for debug
 def token_print(tokens, comment=""):
+    """DEBUG: トークンを見やすくプリントする
+
+    Args:
+        tokens (Tokens): トークンの配列
+        comment (str, optional): コメント. Defaults to "".
+    
+    Example:
+    token_print(tokenize('1 + 2 + 3'))
+    +1 +2 +3
+    """
+    text = ""
     if comment:
-        print(comment + ": ", end="")
+        text += comment + ': '
     for token in tokens:
         match token['type']:
             case 'NUMBER':
-                print(str(token['number']) + " ", end="")
+                text += str(token['number']) + " "
             case 'PLUS':
-                print("+", end="")
+                text += '+'
             case 'MINUS':
-                print("-", end="")
+                text += '-'
             case 'MULTIPLY':
-                print("*", end="")
+                text += '*'
             case 'DIVIDE':
-                print("/", end="")
+                text += '/'
             case 'PAREN_START':
-                print("(", end="")
+                text += '('
             case 'PAREN_END':
-                print(")", end="")
+                text += ')'
             case _:
-                print(token)
-    print()
+                text += str(token)
+    print(text)
 
 
 def read_number(line, index):
@@ -135,45 +145,30 @@ def multiply_divide_evaluate(tokens):
     index = 1
     while index < len(tokens):
         if tokens[index]['type'] == 'NUMBER':
-            # needs Python3.10
-            match tokens[index - 1]['type']:
-                case 'MULTIPLY':
+            token_type = tokens[index - 1]['type']
+            if token_type == 'MULTIPLY' or token_type == 'DIVIDE':
+                if token_type == 'MULTIPLY':
                     tmp = tokens[index - 2]['number'] * tokens[index]['number']
-                    tmp_sign = 'PLUS' if tmp >= 0 else 'MINUS'
-                    sign = 'PLUS' if tmp_sign == tokens[index -
-                                                        3]['type'] else 'MINUS'
-                    # 計算済みの値を削除
-                    tokens.pop(index)  # A * BでBを消す
-                    tokens.pop(index - 1)  # A * Bで*を消す
-                    tokens.pop(index - 2)  # A * BでAを消す
-                    tokens.pop(index - 3)  # A * BでAの符号を消す
-                    # Aの符号があったところに新しい符号を入れる
-                    tokens.insert(index - 3, {'type': sign})
-                    tokens.insert(
-                        index - 2, {'type': 'NUMBER', 'number': abs(tmp)})  # Aがあったところに新しい数字を入れる
-                    index += 1
-                case 'DIVIDE':
+                elif token_type == 'DIVIDE':
                     tmp = tokens[index - 2]['number'] / tokens[index]['number']
-                    tmp_sign = 'PLUS' if tmp >= 0 else 'MINUS'
-                    sign = 'PLUS' if tmp_sign == tokens[index -
-                                                        3]['type'] else 'MINUS'
-                    # 計算済みの値を削除
-                    tokens.pop(index)  # A / BでBを消す
-                    tokens.pop(index - 1)  # A / Bで/を消す
-                    tokens.pop(index - 2)  # A / BでAを消す
-                    tokens.pop(index - 3)  # A / BでAの符号を消す
-                    # Aの符号があったところに新しい符号を入れる
-                    tokens.insert(index - 3, {'type': sign})
-                    tokens.insert(
-                        index - 2, {'type': 'NUMBER', 'number': abs(tmp)})  # Aがあったところに新しい数字を入れる
-                    index += 1
-                case 'PLUS':
-                    index += 1
-                case 'MINUS':
-                    index += 1
-                case _:
-                    print('multiply_divide_evaluate(): Invalid syntax')
-                    exit(1)
+                tmp_sign = 'PLUS' if tmp >= 0 else 'MINUS'
+                sign = 'PLUS' if tmp_sign == tokens[index -
+                                                    3]['type'] else 'MINUS'
+                # 計算済みの値を削除
+                tokens.pop(index)  # A * BでBを消す
+                tokens.pop(index - 1)  # A * Bで*を消す
+                tokens.pop(index - 2)  # A * BでAを消す
+                tokens.pop(index - 3)  # A * BでAの符号を消す
+                # Aの符号があったところに新しい符号を入れる
+                tokens.insert(index - 3, {'type': sign})
+                tokens.insert(
+                    index - 2, {'type': 'NUMBER', 'number': abs(tmp)})  # Aがあったところに新しい数字を入れる
+                index += 1
+            elif token_type == 'PLUS' or token_type == 'MINUS':
+                index += 1
+            else:
+                print('multiply_divide_evaluate(): Invalid syntax')
+                exit(1)
         index += 1
     return tokens
 
@@ -250,18 +245,7 @@ def paren_evaluate(tokens):
             if tmp_tokens[0]['type'] == 'NUMBER' or tmp_tokens[0]['type'] == "PAREN_START":
                 tmp_tokens.insert(0, {'type': 'PLUS'})
             # 再帰的にparen_evaluate関数を実行
-            tmp_answer = plus_minus_evaluate(
-                multiply_divide_evaluate(
-                    paren_evaluate(tmp_tokens)))
-            # tokens[index - 1] == 'PLUS' or tokens[index - 1] == 'MINUS'
-            # tokens[index - 1] == 'MULTIPLY' or tokens[index - 1] == 'DIVIDE'
-            # 2*(1+3) => 2*4
-            # 2*(1-3) => {'type': 'NUMBER', 'number': 1} {...MULTIPLY...} {'type': 'NUMBER', 'number': -2}
-            # tmp_sign = "PLUS"
-            # if tokens[index - 1] == 'PLUS' or tokens[index - 1] == 'MINUS':
-            #     tmp_sign = tokens.pop(index - 1)['type']
-            # ans_sign = 'PLUS' if tmp_answer >= 0 else 'MINUS'
-            # tokens.insert(index - 1, {'type': sign})  # かっこの中のトークンを計算して置き換える
+            tmp_answer = evaluate(tmp_tokens)
             # かっこの中のトークンを計算して置き換える
             tokens.insert(index, {'type': 'NUMBER', 'number': tmp_answer})
         index += 1
@@ -269,6 +253,14 @@ def paren_evaluate(tokens):
 
 
 def evaluate(tokens):
+    """トークンを受け取って、計算結果を返す
+
+    Args:
+        tokens (Tokens): トークンの配列
+
+    Returns:
+        number: 計算結果
+    """
     answer = plus_minus_evaluate(
         multiply_divide_evaluate(paren_evaluate(tokens)))
     return answer
@@ -316,9 +308,9 @@ if __name__ == "__main__":
     doctest.testmod()  # 関数ごとのテスト
     run_test()
 
-    # while True:
-    #     print('> ', end="")
-    #     line = input()
-    #     tokens = tokenize(line)
-    #     answer = evaluate(tokens)
-    #     print("answer = %f\n" % answer)
+    while True:
+        print('> ', end="")
+        line = input()
+        tokens = tokenize(line)
+        answer = evaluate(tokens)
+        print("answer = %f\n" % answer)

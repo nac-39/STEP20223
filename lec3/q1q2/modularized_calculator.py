@@ -95,45 +95,30 @@ def multiply_divide_evaluate(tokens):
     index = 1
     while index < len(tokens):
         if tokens[index]['type'] == 'NUMBER':
-            # needs Python3.10
-            match tokens[index - 1]['type']:
-                case 'MULTIPLY':
+            token_type = tokens[index - 1]['type']
+            if token_type == 'MULTIPLY' or token_type == 'DIVIDE':
+                if token_type == 'MULTIPLY':
                     tmp = tokens[index - 2]['number'] * tokens[index]['number']
-                    tmp_sign = 'PLUS' if tmp >= 0 else 'MINUS'
-                    sign = 'PLUS' if tmp_sign == tokens[index -
-                                                        3]['type'] else 'MINUS'
-                    # 計算済みの値を削除
-                    tokens.pop(index)  # A * BでBを消す
-                    tokens.pop(index - 1)  # A * Bで*を消す
-                    tokens.pop(index - 2)  # A * BでAを消す
-                    tokens.pop(index - 3)  # A * BでAの符号を消す
-                    # Aの符号があったところに新しい符号を入れる
-                    tokens.insert(index - 3, {'type': sign})
-                    tokens.insert(
-                        index - 2, {'type': 'NUMBER', 'number': abs(tmp)})  # Aがあったところに新しい数字を入れる
-                    index += 1
-                case 'DIVIDE':
+                elif token_type == 'DIVIDE':
                     tmp = tokens[index - 2]['number'] / tokens[index]['number']
-                    tmp_sign = 'PLUS' if tmp >= 0 else 'MINUS'
-                    sign = 'PLUS' if tmp_sign == tokens[index -
-                                                        3]['type'] else 'MINUS'
-                    # 計算済みの値を削除
-                    tokens.pop(index)  # A / BでBを消す
-                    tokens.pop(index - 1)  # A / Bで/を消す
-                    tokens.pop(index - 2)  # A / BでAを消す
-                    tokens.pop(index - 3)  # A / BでAの符号を消す
-                    # Aの符号があったところに新しい符号を入れる
-                    tokens.insert(index - 3, {'type': sign})
-                    tokens.insert(
-                        index - 2, {'type': 'NUMBER', 'number': abs(tmp)})  # Aがあったところに新しい数字を入れる
-                    index += 1
-                case 'PLUS':
-                    index += 1
-                case 'MINUS':
-                    index += 1
-                case _:
-                    print('Invalid syntax')
-                    exit(1)
+                tmp_sign = 'PLUS' if tmp >= 0 else 'MINUS'
+                sign = 'PLUS' if tmp_sign == tokens[index -
+                                                    3]['type'] else 'MINUS'
+                # 計算済みの値を削除
+                tokens.pop(index)  # A * BでBを消す
+                tokens.pop(index - 1)  # A * Bで*を消す
+                tokens.pop(index - 2)  # A * BでAを消す
+                tokens.pop(index - 3)  # A * BでAの符号を消す
+                # Aの符号があったところに新しい符号を入れる
+                tokens.insert(index - 3, {'type': sign})
+                tokens.insert(
+                    index - 2, {'type': 'NUMBER', 'number': abs(tmp)})  # Aがあったところに新しい数字を入れる
+                index += 1
+            elif token_type == 'PLUS' or token_type == 'MINUS':
+                index += 1
+            else:
+                print('multiply_divide_evaluate(): Invalid syntax')
+                exit(1)
         index += 1
     return tokens
 
@@ -193,9 +178,10 @@ def run_test():
     test("3+4*2")
     print("==== Test finished! ====\n")
 
+
 if __name__ == "__main__":
     import doctest
-    doctest.testmod() # 関数ごとのテスト
+    doctest.testmod()  # 関数ごとのテスト
 
     run_test()
 
@@ -205,5 +191,3 @@ if __name__ == "__main__":
         tokens = tokenize(line)
         answer = evaluate(tokens)
         print("answer = %f\n" % answer)
-
-
