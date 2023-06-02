@@ -1,7 +1,4 @@
 #! /usr/bin/python3
-from copy import deepcopy
-
-
 def match_any(token, *types):
     """tokenがtypesのいずれかとマッチするときTrueを返す
 
@@ -198,7 +195,7 @@ def plus_minus_evaluate(tokens):
 
 
 def multiply_divide_evaluate(tokens):
-    """掛け算と割り算だけ計算して新しいトークンを返す
+    """掛け算と割り算が混ざった式を計算できる
 
     Args:
         tokens (Tokens): トークンの配列
@@ -217,6 +214,10 @@ def multiply_divide_evaluate(tokens):
     2
     >>> multiply_divide_evaluate(tokenize('+3 * 2'))
     6
+    >>> multiply_divide_evaluate(tokenize('+3 * 2 * 3'))
+    18
+    >>> multiply_divide_evaluate(tokenize('+3 * 2 * 3 / 5 * 10 * 2 * 1 / 10'))
+    7.2
     """
     index = 1
     while index < len(tokens):
@@ -239,7 +240,7 @@ def multiply_divide_evaluate(tokens):
                 tokens.insert(index - 3, {'type': sign})
                 tokens.insert(
                     index - 2, {'type': 'NUMBER', 'number': abs(tmp)})  # Aがあったところに新しい数字を入れる
-                index += 1
+                index -= 1
             elif token_type == 'PLUS' or token_type == 'MINUS':
                 index += 1
             else:
@@ -263,7 +264,7 @@ def get_function(token_type=None):
 
 
 def paren_evaluate(tokens):
-    """かっこありの式をかっこなしの式にする
+    """かっこありの式を計算できる
 
     Args:
         tokens (Tokens): トークンの配列
@@ -296,7 +297,6 @@ def paren_evaluate(tokens):
     3
     """
     index = 1
-    tokens = deepcopy(tokens)
     start_parens = ['PAREN_START', 'ABS_PAREN', 'INT_PAREN', 'ROUND_PAREN']
     function = get_function()
     while index < len(tokens):
@@ -356,6 +356,8 @@ def test(line):
 def run_test():
     print("==== Test started! ====")
     test("1")
+    test("-2")
+    test("-2 -2")
     test("(((3)))")
     test("+1+23+4")
     test("(1+2)*(3+4)")
@@ -369,18 +371,18 @@ def run_test():
     test("3+4/2")
     test("3-4/2")
     test("3+4*2")
+    test("1/3*4")
     test("(1+2)*3")
     test("(3*(2*(4+5)))")
     test("(3/(2/(4+5)))")
     test("(((4+5)*2)+1)")
     test("(((4+5)*2)*1)")
     test("(((4+5)*2))")
-    test("round(1.4) + abs(-1) + int(1.5)")
-    test("round(1/3) * (1+2)")
-    test("(1+3 + (1 + 4)) * (1+2)")
     test("abs(3)")
-    # test("1/3*4") # bug
-    # test("8 * (1+2) / int(8/3)")
+    test("round(1/3) * (1+2)")
+    test("round(1.4) + abs(-1) + int(1.5)")
+    test("(1+3 + (1 + 4)) * (1+2)")
+    test("8 * (1+2) / int(8/3)")
     print("==== Test finished! ====\n")
 
 
