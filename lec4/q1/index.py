@@ -120,7 +120,9 @@ class Wikipedia:
         ranks = {i: 1.0 for i in self.titles.keys()}
         old_ranks = {i: 0.0 for i in self.titles.keys()}
         # 4. 1~3を収束するまで繰り返す
+        c = 0
         while not all([ranks[i] - old_ranks[i] < 1e-8 for i in self.titles.keys()]):
+            print(c)
             tmp_ranks = {i: 0.0 for i in self.titles.keys()}
             for key, value in ranks.items():
                 for child in self.links[key]:
@@ -131,6 +133,7 @@ class Wikipedia:
             ranks = tmp_ranks
             # 全てのページランクの合計が最初と同じか確かめる
             assert sum(ranks.values()) - 1.0 * len(ranks) < 1e-8
+            c += 1
         most_popular_pages = sorted(ranks.items(), key=lambda x: x[1], reverse=True)[:10]
         print("The most popular pages are:")
         for k, v in self.titles.items():

@@ -19,7 +19,7 @@
 ## 方針
 
 アイデア：
-queueの要素の一つ一つにそのノードまでの最短経路をリストとして持たせておく  
+queue の要素の一つ一つにそのノードまでの最短経路をリストとして持たせておく  
 リストの最後尾を今見ている node として扱う
 
 small での例： A -> C の最短経路を探す
@@ -27,7 +27,7 @@ small での例： A -> C の最短経路を探す
 1. queue: `[[A]]`
 1. queue: `[[A, B]]`
 1. queue: `[[A, B, C],[A, B, D]]`
-Cが見つかるので終わり
+   C が見つかるので終わり
 
 - small の graph
 
@@ -54,3 +54,27 @@ The path コンピュータ・アーキテクチャ -> ユーゴスラビア改�
 ```
 
 確かに小林賢太郎って Apple の CM 出てたな…
+
+#　問題２
+
+- `find_most_popular_pages`の実装
+
+## 方針
+
+授業のスライドにアルゴリズムは載っているので、その通りに実装する
+
+## 実行方法
+
+```bash
+# smallでテスト
+% python lec4/q1/index.py
+# small
+% python lec4/q1/index.py ./lec4/wikipedia_dataset/pages_small.txt lec4/wikipedia_dataset/links_small.txt
+# medium
+% python lec4/q1/index.py ./lec4/wikipedia_dataset/pages_medium.txt lec4/wikipedia_dataset/links_medium.txt
+# large
+% python lec4/q1/index.py ./lec4/wikipedia_dataset/pages_large.txt lec4/wikipedia_dataset/links_large.txt
+
+```
+
+mediumだと20分ぐらい動かしても収束しなかったので、Random Surferモデルを実装した方が良いのでは…？
