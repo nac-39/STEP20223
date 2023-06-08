@@ -204,6 +204,8 @@ def multiply_divide_evaluate(tokens):
         Tokens: 新しいトークンの配列
 
     Tests:
+    >>> multiply_divide_evaluate(tokenize('1'))
+    1
     >>> multiply_divide_evaluate(tokenize('1 + 1 * 2'))
     3
     >>> multiply_divide_evaluate(tokenize('1 * 2 + 1'))
