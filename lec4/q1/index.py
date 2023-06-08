@@ -71,6 +71,16 @@ class Wikipedia:
     # |start|: The title of the start page.
     # |goal|: The title of the goal page.
     def find_shortest_path(self, start, goal, print_path=True):
+        """二つのページの最短経路をbfsで探索する
+
+        Args:
+            start (str): スタートするページのタイトル
+            goal (str): ゴールのページのタイトル
+            print_path (bool, optional): ->で繋いだ最短経路を表示するかどうか. Defaults to True.
+
+        Returns:
+            list[str]: 最短経路のタイトルのリスト
+        """
         for k, v in self.titles.items():
             if v == start:
                 start = k
@@ -90,6 +100,7 @@ class Wikipedia:
                 if print_path:
                     print("The shortest path is:")
                     print(" -> ".join(shortest_path))
+                    print()
                 return shortest_path
             for child in self.links[node[-1]]:
                 if not child in visited:
@@ -100,10 +111,33 @@ class Wikipedia:
 
     # Calculate the page ranks and print the most popular pages.
     def find_most_popular_pages(self):
-        # ------------------------#
-        # Write your code here!  #
-        # ------------------------#
-        pass
+        """ページランクを計算して、最も人気のあるページを表示する
+
+        Returns:
+            List[Tuple(int, float)]: 最も人気のあるページTop10のidとページランクのタプルのリスト
+        """
+        # 1. 全部のノードに初期値1.0を設定する
+        ranks = {i: 1.0 for i in self.titles.keys()}
+        old_ranks = {i: 0.0 for i in self.titles.keys()}
+        # 4. 1~3を収束するまで繰り返す
+        while not all([ranks[i] - old_ranks[i] < 1e-8 for i in self.titles.keys()]):
+            tmp_ranks = {i: 0.0 for i in self.titles.keys()}
+            for key, value in ranks.items():
+                for child in self.links[key]:
+                    # 2. 各ノードのページランクを隣接ノードに均等に分配する
+                    tmp_ranks[child] += value / len(self.links[key])
+            old_ranks = ranks.copy()
+            # 3. 各ノードのページランクを、受け取ったページランクの合計値に更新する
+            ranks = tmp_ranks
+            # 全てのページランクの合計が最初と同じか確かめる
+            assert sum(ranks.values()) - 1.0 * len(ranks) < 1e-8
+        most_popular_pages = sorted(ranks.items(), key=lambda x: x[1], reverse=True)[:10]
+        print("The most popular pages are:")
+        for k, v in self.titles.items():
+            for page in most_popular_pages:
+                if k == page[0]:
+                    print(v, page[1])
+        return most_popular_pages
 
     # Do something more interesting!!
     def find_something_more_interesting(self):
@@ -123,6 +157,11 @@ def test_small():
     assert wikipedia.find_shortest_path("C", "A", print_path=False) == ["C", "A"]
     assert wikipedia.find_shortest_path("A", "E", print_path=False) == ["A", "B", "C", "E"]
     assert wikipedia.find_shortest_path("A", "F", print_path=False) == ["A", "B", "C", "F"]
+    most_popular_pages = wikipedia.find_most_popular_pages()
+    ans = {3: 1.39, 4: 1.39, 2: 1.18, 5: 0.84, 6: 0.84, 1: 0.36}
+    for k, v in most_popular_pages:
+        assert abs(v - ans[k]) < 0.1
+
     print("test_small() passed!")
 
 
@@ -144,4 +183,4 @@ if __name__ == "__main__":
     wikipedia.find_shortest_path("コンピュータ・アーキテクチャ", "ワンダフルライフ_(映画)")
     wikipedia.find_shortest_path("コンピュータ・アーキテクチャ", "小林賢太郎")
     wikipedia.find_shortest_path("コンピュータ・アーキテクチャ", "ユーゴスラビア改名")
-    # wikipedia.find_most_popular_pages()
+    wikipedia.find_most_popular_pages()
