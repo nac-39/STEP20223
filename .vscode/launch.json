@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "internalConsole",
             "justMyCode": true,
-            "args": ["./lec4/wikipedia_dataset/pages_small.txt", "./lec4/wikipedia_dataset/links_small.txt"]
+            "args": ["./lec4/wikipedia_dataset/pages_medium.txt", "./lec4/wikipedia_dataset/links_medium.txt"]
         }
     ]
 }
