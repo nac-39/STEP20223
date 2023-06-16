@@ -1,3 +1,10 @@
 {
-  "rust-analyzer.linkedProjects": ["lec2/rust/Cargo.toml", "lec4/rust/Cargo.toml"]
+  "rust-analyzer.linkedProjects": [
+    "lec2/rust/Cargo.toml",
+    "lec4/rust/Cargo.toml"
+  ],
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "python.formatting.provider": "none"
 }
