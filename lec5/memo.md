@@ -41,6 +41,11 @@
 - 突然変異
   - 交換：ランダムに選択した２区間について、遺伝子を区間ごと交換する
 
+
+### パラメータ関連
+
+- `mutation_rage`は0.1ぐらいだと永遠に解が変わらなくなる…？
+
 ## 閲覧した記事
 
 [AHC006 初心者向け解説 ～貪欲だけで順位表 2 ページ目を目指す～](https://www.terry-u16.net/entry/ahc006-for-beginners)という記事を参考に、貪欲法で行けるところまで頑張ってみる
@@ -56,3 +61,8 @@
 ## 参考にしたコード
 
 `is_crossing()`: [https://github.com/ss-cosmos-hue/step23dev/blob/main/5/solver_simulated_annealing.py#L35](https://github.com/ss-cosmos-hue/step23dev/blob/main/5/solver_simulated_annealing.py#L35)
+
+## 他の人のコード見て雑感
+
+- 都市が少ない時は全探索
+- 2-optか焼きなまし法を使ってる人が多い

@@ -268,7 +268,7 @@ def solve(cities, max_iterate=1000):
     nation = Nation(cities)
     salesmen = [Salesman(N) for _ in range(MAX_INDIVIDUALS - 1)]
     cache = []
-    cross_over = CrossOver(mutate_func=Mutate.inversion_mutation)
+    cross_over = CrossOver(mutate_func=Mutate.inversion_mutation, mutation_rate=0.3)
     for _ in range(max_iterate):
         # 選択
         parents = Choice.roulette(salesmen, nation)
@@ -279,17 +279,25 @@ def solve(cities, max_iterate=1000):
         # 交差してるやつは入れ替える
         for i in range(len(babies)):
             if len(babies[i].tour) > 3:
-                for j in range(len(babies[i].tour) - 3):
+                # for j in range(len(babies[i].tour) - 3):
+                #     if is_crossing(
+                #         cities[babies[i].tour[j]],
+                #         cities[babies[i].tour[j + 1]],
+                #         cities[babies[i].tour[j + 2]],
+                #         cities[babies[i].tour[j + 3]],
+                #     ):
+                #         babies[i].tour[j + 1], babies[i].tour[j + 2] = (
+                #             babies[i].tour[j + 2],
+                #             babies[i].tour[j + 1],
+                #         )
+                for j in range(len(babies[i].tour) - 2):
                     if is_crossing(
                         cities[babies[i].tour[j]],
                         cities[babies[i].tour[j + 1]],
-                        cities[babies[i].tour[j + 2]],
-                        cities[babies[i].tour[j + 3]],
+                        cities[babies[i].tour[0]],
+                        cities[babies[i].tour[-1]],
                     ):
-                        babies[i].tour[j + 1], babies[i].tour[j + 2] = (
-                            babies[i].tour[j + 2],
-                            babies[i].tour[j + 1],
-                        )
+                        babies[i].tour[j + 1 :] = reversed(babies[i].tour[j + 1 :])
 
         salesmen += babies
         salesmen = sorted(salesmen, key=lambda salesman: salesman.get_score(nation))
@@ -298,14 +306,21 @@ def solve(cities, max_iterate=1000):
         cache = cache[-1000:]  # 過去1000世代のスコアを保存
         # 過去1000世代で最もスコアが良くなっていなければ突然変異の確率をあげる
         if len(set(cache)) == 1 and len(cache) == 1000:
-            cross_over.mutation_rate = max(0.1, cross_over.mutation_rate + 0.01)
+            if N <= 16:
+                break
+            if _ % 1000 == 0:
+                cross_over.mutation_rate = min(0.5, cross_over.mutation_rate + 0.01)
+                print(f"mutation_rate: {cross_over.mutation_rate}")
         if _ % 1000 == 0:
             print(f"iter: {_}, score: {salesmen[0].get_score(nation)}")
     return salesmen[0].tour
 
 
 def solve_all():
-    for i in range(3, 4):
+    with open("scores.md", "a") as f:
+        f.write("\n---\n")
+        f.write("|N|score|\n")
+    for i in range(0, 7):
         cities = read_input(f"input_{i}.csv")
         tour = solve(cities, max_iterate=100000)
         print(f"N={len(cities)}, score: {Nation(cities).get_score(tour)}")
@@ -313,6 +328,8 @@ def solve_all():
             f.write("index\n")
             for city in tour:
                 f.write(f"{city}\n")
+        with open("scores.md", "a") as f:
+            f.write(f"|{len(cities)}|{Nation(cities).get_score(tour)}|\n")
 
 
 if __name__ == "__main__":
