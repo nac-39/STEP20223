@@ -51,4 +51,8 @@
 
 [遺伝的アルゴリズムで巡回セールスマン問題を解いてみる(理論編)](https://qiita.com/masaru/items/729a0a0e2d7f305e8e90)
 
-[順序問題へのGAの適用](http://ono-t.d.dooo.jp/GA/GA-order.html)
+[順序問題への GA の適用](http://ono-t.d.dooo.jp/GA/GA-order.html)
+
+## 参考にしたコード
+
+`is_crossing()`: [https://github.com/ss-cosmos-hue/step23dev/blob/main/5/solver_simulated_annealing.py#L35](https://github.com/ss-cosmos-hue/step23dev/blob/main/5/solver_simulated_annealing.py#L35)

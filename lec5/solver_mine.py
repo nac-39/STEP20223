@@ -14,6 +14,29 @@ def distance(city1, city2):
     return math.sqrt((city1[0] - city2[0]) ** 2 + (city1[1] - city2[1]) ** 2)
 
 
+def is_crossing(city1, city2, city3, city4):
+    """city1,2を結ぶ線とcity3,4を結ぶ線が交差しているかどうかを判定する
+
+    Args:
+        city1 (int): 1番目の都市のインデックス
+        city2 (int): 2番目の都市のインデックス
+        city3 (int): 3番目の都市のインデックス
+        city4 (int): 4番目の都市のインデックス
+
+    Returns:
+        bool: 交差しているかどうか
+
+    Tests:
+        >>> is_crossing((0, 0), (1, 1), (0, 1), (1, 0))
+        True
+        >>> is_crossing((0, 0), (1, 1), (0, 1), (2, 0))
+        True
+    """
+    return distance(city1, city2) + distance(city3, city4) > distance(
+        city1, city3
+    ) + distance(city2, city4)
+
+
 class Nation:
     def __init__(self, cities) -> None:
         self.cities = cities
@@ -35,7 +58,9 @@ class Nation:
         for index, city in enumerate(tour):
             score = distance(self.cities[city], self.cities[next_city])
             score_sum += score
-            next_city = tour[(index + 2) % len(tour)] # 最後の都市から最初の都市への距離を計算するために、index + 1のmodをとる
+            next_city = tour[
+                (index + 2) % len(tour)
+            ]  # 最後の都市から最初の都市への距離を計算するために、index + 1のmodをとる
         return score_sum
 
 
@@ -85,9 +110,63 @@ class Choice:
         return random.choices(salesmen, weights=salesmen_prob, k=2)
 
 
-class CrossOver:
+class Mutate:
     @staticmethod
-    def cycle_crossover(parent1: Salesman, parent2: Salesman) -> Salesman:
+    def swap_mutation(tour: list[int]) -> list[int]:
+        """ランダムな長さで二箇所を入れ替える
+
+        Args:
+            tour (list[int]): 巡回する都市の順番
+
+        Returns:
+            list[int]: 二箇所を入れ替えた後の都市の順番
+        """
+        mutate_length = random.randint(1, len(tour) // 2)
+        mutate_index1 = random.sample(range(len(tour) - mutate_length * 2 + 1), 1)[0]
+        mutate_index2 = random.sample(
+            range(mutate_index1 + mutate_length, len(tour) - mutate_length + 1), 1
+        )[0]
+        # 入れ替える遺伝子の断片
+        fragment1 = tour[mutate_index1 : mutate_index1 + mutate_length]
+        fragment2 = tour[mutate_index2 : mutate_index2 + mutate_length]
+        assert len(fragment1) == len(fragment2) == mutate_length
+        # 入れ替える
+        new_tour = (
+            tour[:mutate_index1]
+            + fragment2
+            + tour[mutate_index1 + mutate_length : mutate_index2]
+            + fragment1
+            + tour[mutate_index2 + mutate_length :]
+        )
+        assert len(new_tour) == len(tour)
+        return new_tour
+
+    def inversion_mutation(tour: list[int]) -> list[int]:
+        """逆位突然変異
+
+        Args:
+            tour (list[int]): 巡回する都市の順番
+
+        Returns:
+            list[int]: 逆位突然変異を行った後の都市の順番
+        """
+        swap_indices = random.sample(range(len(tour) - 1), 1)[0]
+        tour[swap_indices + 1], tour[swap_indices] = (
+            tour[swap_indices],
+            tour[swap_indices + 1],
+        )
+        return tour
+
+
+class CrossOver:
+    def __init__(self, mutate_func=Mutate.swap_mutation, mutation_rate=0.1) -> None:
+        self.mutation_rate = mutation_rate
+        self.mutate_func = mutate_func
+
+    def mutate(self, tour: list[int]) -> list[int]:
+        return self.mutate_func(tour)
+
+    def cycle_crossover(self, parent1: Salesman, parent2: Salesman) -> Salesman:
         """循環交叉
         Args:
             parent1 (Salesman): 親1
@@ -115,33 +194,131 @@ class CrossOver:
             # 更新されていない部分を親2からコピーする
             if child[i] == -1:
                 child[i] = parent2.tour[i]
+        # ランダムに突然変異をかける
+        if random.random() < self.mutation_rate:
+            return Salesman(tour=self.mutate(child))
+        return Salesman(tour=child)
+
+    def order_crossover(self, parent1: Salesman, parent2: Salesman) -> Salesman:
+        """順列交叉
+
+        Args:
+            parent1 (Salesman): 親１
+            parent2 (Salesman): 親２
+
+        Returns:
+            Salesman: 子
+        """
+        assert len(parent1.tour) == len(parent2.tour)
+        city_count = len(parent1.tour)
+        child = [-1 for _ in range(city_count)]
+        # 子に引き継ぐ遺伝子の範囲を決める
+        length = random.randint(1, city_count - 1)
+        index = random.randint(0, city_count - length)
+        for i in range(index, index + length):
+            child[i] = parent1.tour[i]
+        # 次に親2の遺伝子をコピーする
+        for i in range(city_count):
+            if child[i] == -1:
+                child[i] = parent2.tour[i]
+        assert len(set(child)) == len(child)
+        assert len(child) == len(parent1.tour)
         return Salesman(tour=child)
 
 
+def get_greedy_tour(cities):
+    """貪欲法の解を得る
+
+    Args:
+        cities (tuple[int, int]): 都市の座標
+
+    Returns:
+        list[int]: めぐる都市の順番
+    """
+    N = len(cities)
+
+    dist = [[0] * N for i in range(N)]
+    for i in range(N):
+        for j in range(i, N):
+            dist[i][j] = dist[j][i] = distance(cities[i], cities[j])
+
+    current_city = 0
+    unvisited_cities = set(range(1, N))
+    tour = [current_city]
+
+    while unvisited_cities:
+        next_city = min(unvisited_cities, key=lambda city: dist[current_city][city])
+        unvisited_cities.remove(next_city)
+        tour.append(next_city)
+        current_city = next_city
+    return tour
+
+
 def solve(cities, max_iterate=1000):
+    """TSPに遺伝的アルゴリズムを適用し、最適解をヒューリスティックに求める
+
+    Args:
+        cities (list[tuple[int, int]]): 全ての都市の座標
+        max_iterate (int, optional): 最大の世代数. Defaults to 1000.
+
+    Returns:
+        list[int]: 最適な順番
+    """
     N = len(cities)
     nation = Nation(cities)
-    salesmen = [Salesman(N) for _ in range(MAX_INDIVIDUALS)]
+    salesmen = [Salesman(N) for _ in range(MAX_INDIVIDUALS - 1)]
+    cache = []
+    cross_over = CrossOver(mutate_func=Mutate.inversion_mutation)
     for _ in range(max_iterate):
+        # 選択
         parents = Choice.roulette(salesmen, nation)
-        baby = CrossOver.cycle_crossover(parents[0], parents[1])
-        salesmen.append(baby)
+        # 交叉
+        babies = []
+        babies.append(cross_over.cycle_crossover(parents[0], parents[1]))
+        babies.append(cross_over.cycle_crossover(parents[1], parents[0]))
+        # 交差してるやつは入れ替える
+        for i in range(len(babies)):
+            if len(babies[i].tour) > 3:
+                for j in range(len(babies[i].tour) - 3):
+                    if is_crossing(
+                        cities[babies[i].tour[j]],
+                        cities[babies[i].tour[j + 1]],
+                        cities[babies[i].tour[j + 2]],
+                        cities[babies[i].tour[j + 3]],
+                    ):
+                        babies[i].tour[j + 1], babies[i].tour[j + 2] = (
+                            babies[i].tour[j + 2],
+                            babies[i].tour[j + 1],
+                        )
+
+        salesmen += babies
         salesmen = sorted(salesmen, key=lambda salesman: salesman.get_score(nation))
-        salesmen = salesmen[:MAX_INDIVIDUALS]
+        salesmen = salesmen[:MAX_INDIVIDUALS]  # 淘汰
+        cache.append(salesmen[0].get_score(nation))
+        cache = cache[-1000:]  # 過去1000世代のスコアを保存
+        # 過去1000世代で最もスコアが良くなっていなければ突然変異の確率をあげる
+        if len(set(cache)) == 1 and len(cache) == 1000:
+            cross_over.mutation_rate = max(0.1, cross_over.mutation_rate + 0.01)
+        if _ % 1000 == 0:
+            print(f"iter: {_}, score: {salesmen[0].get_score(nation)}")
     return salesmen[0].tour
 
 
 def solve_all():
-    for i in range(0, 5):
+    for i in range(3, 4):
         cities = read_input(f"input_{i}.csv")
-        tour = solve(cities, max_iterate=10000)
-        print(f"score: {Nation(cities).get_score(tour)}")
+        tour = solve(cities, max_iterate=100000)
+        print(f"N={len(cities)}, score: {Nation(cities).get_score(tour)}")
         with open(f"output_{i}.csv", "w") as f:
             f.write("index\n")
             for city in tour:
                 f.write(f"{city}\n")
 
+
 if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()
     # assert len(sys.argv) > 1
     # tour = solve(read_input(sys.argv[1]))
     # print_tour(tour)
