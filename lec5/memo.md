@@ -1,4 +1,15 @@
-# ５
+# ５, 6: TSP
+
+## 実行方法
+
+```bash
+cd lec5
+python3 solver_mine.py
+# pypyで高速化する場合
+docker run pypy:3.9-7.3.12-bullseye --rm -v ".:/workspace" bash
+# cd workspace
+# pypy solver_mine.py
+```
 
 ## 方針
 
@@ -10,7 +21,7 @@
 
 - 2-opt
 - 焼きなまし法
-- 遺伝的アルゴリズム ← スコアボードでパッと見つかってる人がいなさそうだからやってみたい
+- [採用] 遺伝的アルゴリズム ← スコアボードでパッと見つかってる人がいなさそうだからやってみたい
 
 #### 遺伝的アルゴリズム
 

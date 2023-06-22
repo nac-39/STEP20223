@@ -11,7 +11,16 @@
             "program": "${file}",
             "console": "internalConsole",
             "justMyCode": true,
-            "args": ["./lec4/wikipedia_dataset/pages_medium.txt", "./lec4/wikipedia_dataset/links_medium.txt"]
+            "args": [
+                "./lec4/wikipedia_dataset/pages_medium.txt",
+                "./lec4/wikipedia_dataset/links_medium.txt"
+            ]
+        },
+        {
+            "name": "rust",
+            "type": "lldb",
+            "program": "${workspaceFolder}/lec5/rust",
+            "request": "launch",
         }
     ]
 }

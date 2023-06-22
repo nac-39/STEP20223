@@ -1,6 +1,7 @@
 {
   "rust-analyzer.linkedProjects": [
     "lec2/rust/Cargo.toml",
+    "lec5/rust/Cargo.toml",
     "lec4/rust/Cargo.toml"
   ],
   "[python]": {

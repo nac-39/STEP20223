@@ -89,7 +89,7 @@ class Choice:
         Returns:
             Salesman: スコアが最も良い候補
         """
-        salesmen = sorted(salesmen, key=lambda salesman: salesman.get_score(nation))
+        salesmen = sorted(salesmen, key=lambda salesman: 1 / salesman.get_score(nation))
         return salesmen[0], salesmen[1]
 
     @staticmethod
@@ -102,12 +102,10 @@ class Choice:
         Returns:
             Salesman: スコアがいいほど確率が高いルーレットで選択された候補
         """
-        salesmen_scores = [salesman.get_score(nation) for salesman in salesmen]
-        salesmen_scores_sum = sum(salesmen_scores)
-        salesmen_prob = [
-            salesman_score / salesmen_scores_sum for salesman_score in salesmen_scores
+        salesmen_scores = [
+            (1 / salesman.get_score(nation)) ** 2 for salesman in salesmen
         ]
-        return random.choices(salesmen, weights=salesmen_prob, k=2)
+        return random.choices(salesmen, weights=salesmen_scores, k=2)
 
 
 class Mutate:
@@ -179,6 +177,8 @@ class CrossOver:
         http://ono-t.d.dooo.jp/GA/GA-order.html#CX
         """
         assert len(parent1.tour) == len(parent2.tour)
+        if parent1.tour == parent2.tour:
+            parent2.tour = self.mutate(parent2.tour)
         city_count = len(parent1.tour)
         tmp_parent2 = {v: k for k, v in enumerate(parent2.tour)}
         child = [-1 for _ in range(city_count)]
@@ -210,6 +210,8 @@ class CrossOver:
             Salesman: 子
         """
         assert len(parent1.tour) == len(parent2.tour)
+        if parent1.tour == parent2.tour:
+            parent2.tour = self.mutate(parent2.tour)
         city_count = len(parent1.tour)
         child = [-1 for _ in range(city_count)]
         # 子に引き継ぐ遺伝子の範囲を決める
@@ -268,7 +270,7 @@ def solve(cities, max_iterate=1000):
     nation = Nation(cities)
     salesmen = [Salesman(N) for _ in range(MAX_INDIVIDUALS - 1)]
     cache = []
-    cross_over = CrossOver(mutate_func=Mutate.inversion_mutation, mutation_rate=0.3)
+    cross_over = CrossOver(mutate_func=Mutate.inversion_mutation, mutation_rate=0.1)
     for _ in range(max_iterate):
         # 選択
         parents = Choice.roulette(salesmen, nation)
@@ -276,28 +278,31 @@ def solve(cities, max_iterate=1000):
         babies = []
         babies.append(cross_over.cycle_crossover(parents[0], parents[1]))
         babies.append(cross_over.cycle_crossover(parents[1], parents[0]))
-        # 交差してるやつは入れ替える
+        # 交差してるやつをランダムに発見して入れ替える
         for i in range(len(babies)):
             if len(babies[i].tour) > 3:
-                # for j in range(len(babies[i].tour) - 3):
-                #     if is_crossing(
-                #         cities[babies[i].tour[j]],
-                #         cities[babies[i].tour[j + 1]],
-                #         cities[babies[i].tour[j + 2]],
-                #         cities[babies[i].tour[j + 3]],
-                #     ):
-                #         babies[i].tour[j + 1], babies[i].tour[j + 2] = (
-                #             babies[i].tour[j + 2],
-                #             babies[i].tour[j + 1],
-                #         )
-                for j in range(len(babies[i].tour) - 2):
+                # なんちゃって2-opt
+                # 全ての都市の組合せを調べると時間がかかると思ったので、ランダムに選んだ都市の組合せを調べる
+                for _nanchatte_2_opt in range(len(babies[i].tour) // 10):
+                    index = random.randint(0, len(babies[i].tour) - 2)
+                    index2 = random.randint(0, len(babies[i].tour) - 2)
+                    while index2 == index:
+                        index2 = random.randint(0, len(babies[i].tour) - 2)
                     if is_crossing(
-                        cities[babies[i].tour[j]],
-                        cities[babies[i].tour[j + 1]],
-                        cities[babies[i].tour[0]],
-                        cities[babies[i].tour[-1]],
+                        cities[babies[i].tour[index]],
+                        cities[babies[i].tour[index + 1]],
+                        cities[babies[i].tour[index2]],
+                        cities[babies[i].tour[index2 + 1]],
                     ):
-                        babies[i].tour[j + 1 :] = reversed(babies[i].tour[j + 1 :])
+                        index, index2 = min(index, index2), max(index, index2)
+                        improved_baby = (
+                            babies[i].tour[: index + 1]
+                            + list(reversed(babies[i].tour[index + 1 : index2 + 1]))
+                            + babies[i].tour[index2 + 1 :]
+                        )
+                        assert len(set(babies[i].tour)) == len(babies[i].tour)
+                        assert len(improved_baby) == len(babies[i].tour)
+                        babies[i].tour = improved_baby
 
         salesmen += babies
         salesmen = sorted(salesmen, key=lambda salesman: salesman.get_score(nation))
@@ -309,7 +314,7 @@ def solve(cities, max_iterate=1000):
             if N <= 16:
                 break
             if _ % 1000 == 0:
-                cross_over.mutation_rate = min(0.5, cross_over.mutation_rate + 0.01)
+                cross_over.mutation_rate = min(0.3, cross_over.mutation_rate + 0.01)
                 print(f"mutation_rate: {cross_over.mutation_rate}")
         if _ % 1000 == 0:
             print(f"iter: {_}, score: {salesmen[0].get_score(nation)}")
