@@ -3,6 +3,7 @@
 import sys
 import math
 import random
+import time
 
 from common import print_tour, read_input
 
@@ -309,25 +310,34 @@ def solve(cities, max_iterate=1000):
         salesmen = salesmen[:MAX_INDIVIDUALS]  # 淘汰
         cache.append(salesmen[0].get_score(nation))
         cache = cache[-1000:]  # 過去1000世代のスコアを保存
-        # 過去1000世代で最もスコアが良くなっていなければ突然変異の確率をあげる
+        # 過去10000世代で最もスコアが良くなっていなければ突然変異の確率をあげる
         if len(set(cache)) == 1 and len(cache) == 1000:
             if N <= 16:
                 break
             if _ % 1000 == 0:
                 cross_over.mutation_rate = min(0.3, cross_over.mutation_rate + 0.01)
                 print(f"mutation_rate: {cross_over.mutation_rate}")
+                # ランダムな解をぶち込む
+                salesmen = salesmen[: MAX_INDIVIDUALS // 2] + [
+                    Salesman(N) for _ in range(MAX_INDIVIDUALS // 2 - 1)
+                ]
         if _ % 1000 == 0:
             print(f"iter: {_}, score: {salesmen[0].get_score(nation)}")
     return salesmen[0].tour
 
 
 def solve_all():
+    memo = input("memo: ")
     with open("scores.md", "a") as f:
         f.write("\n---\n")
+        f.write(f"\n## {time.strftime('%Y/%m/%d %H:%M:%S(UTC)')}\n\n")
+        if memo:
+            f.write(f"- {memo}\n\n")
         f.write("|N|score|\n")
+        f.write("|:--|:--|\n")
     for i in range(0, 7):
         cities = read_input(f"input_{i}.csv")
-        tour = solve(cities, max_iterate=100000)
+        tour = solve(cities, max_iterate=1000000)
         print(f"N={len(cities)}, score: {Nation(cities).get_score(tour)}")
         with open(f"output_{i}.csv", "w") as f:
             f.write("index\n")
