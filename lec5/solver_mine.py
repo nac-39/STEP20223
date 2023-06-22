@@ -304,23 +304,30 @@ def solve(cities, max_iterate=1000):
                         assert len(set(babies[i].tour)) == len(babies[i].tour)
                         assert len(improved_baby) == len(babies[i].tour)
                         babies[i].tour = improved_baby
+                # 解の最初と最後が交わってる時を検知
+                for index in range(len(babies[i].tour)):
+                    if is_crossing(
+                        cities[babies[i].tour[index]],
+                        cities[babies[i].tour[(index + 1) % len(babies[i].tour)]],
+                        cities[babies[i].tour[0]],
+                        cities[babies[i].tour[-1]],
+                    ):
+                        babies[i].tour = babies[i].tour[i + 1 :] = reversed(
+                            babies[i].tour[i + 1 :]
+                        )
 
         salesmen += babies
         salesmen = sorted(salesmen, key=lambda salesman: salesman.get_score(nation))
         salesmen = salesmen[:MAX_INDIVIDUALS]  # 淘汰
         cache.append(salesmen[0].get_score(nation))
         cache = cache[-1000:]  # 過去1000世代のスコアを保存
-        # 過去10000世代で最もスコアが良くなっていなければ突然変異の確率をあげる
+        # 過去1000世代で最もスコアが良くなっていなければ突然変異の確率をあげる
         if len(set(cache)) == 1 and len(cache) == 1000:
             if N <= 16:
                 break
             if _ % 1000 == 0:
                 cross_over.mutation_rate = min(0.3, cross_over.mutation_rate + 0.01)
                 print(f"mutation_rate: {cross_over.mutation_rate}")
-                # ランダムな解をぶち込む
-                salesmen = salesmen[: MAX_INDIVIDUALS // 2] + [
-                    Salesman(N) for _ in range(MAX_INDIVIDUALS // 2 - 1)
-                ]
         if _ % 1000 == 0:
             print(f"iter: {_}, score: {salesmen[0].get_score(nation)}")
     return salesmen[0].tour
