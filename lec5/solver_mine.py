@@ -312,10 +312,9 @@ def solve(cities, max_iterate=1000):
                         cities[babies[i].tour[0]],
                         cities[babies[i].tour[-1]],
                     ):
-                        babies[i].tour = babies[i].tour[i + 1 :] = reversed(
-                            babies[i].tour[i + 1 :]
+                        babies[i].tour = babies[i].tour[i + 1 :] = list(
+                            reversed(babies[i].tour[i + 1 :])
                         )
-
         salesmen += babies
         salesmen = sorted(salesmen, key=lambda salesman: salesman.get_score(nation))
         salesmen = salesmen[:MAX_INDIVIDUALS]  # 淘汰
