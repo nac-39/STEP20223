@@ -77,16 +77,27 @@ void my_initialize() {
 void *my_malloc(size_t size) {
   my_metadata_t *metadata = my_heap.free_head;
   my_metadata_t *prev = NULL;
-  // First-fit: Find the first free slot the object fits.
-  // TODO: Update this logic to Best-fit!
-  while (metadata && metadata->size < size) {
+  my_metadata_t *best_fit = NULL;
+  my_metadata_t *best_fit_prev = NULL;
+  // Best-fit free slot selection
+  while (metadata) {
     prev = metadata;
     metadata = metadata->next;
+    // Find the best-fit slot: the smallest free slot that is large enough
+    if (metadata && metadata->size >= size && (!best_fit || metadata->size < best_fit->size)) {
+      best_fit = metadata;
+      best_fit_prev = prev;
+    }
+  }
+  if (best_fit) {
+    metadata = best_fit;
+    prev = best_fit_prev;
   }
   // now, metadata points to the first free slot
   // and prev is the previous entry.
 
   if (!metadata) {
+    // 開いているスロットがない場合はOSに新しいメモリを要求する　
     // There was no free slot available. We need to request a new memory region
     // from the system by calling mmap_from_system().
     //
