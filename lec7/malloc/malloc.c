@@ -18,7 +18,7 @@
 // Interfaces to get memory pages from OS
 //
 
-void *mmap_from_system(size_t size);
+void *mmap_from_system(size_t size); // アドレスを返す
 void munmap_to_system(void *ptr, size_t size);
 
 //
@@ -140,7 +140,7 @@ void *my_malloc(size_t size) {
     //     metadata   ptr      new_metadata
     //                 <------><---------------------->
     //                   size       remaining size
-    my_metadata_t *new_metadata = (my_metadata_t *)((char *)ptr + size);
+    my_metadata_t *new_metadata = (my_metadata_t *)((char *)ptr + size); // size byteb分だけptrをずらす
     new_metadata->size = remaining_size - sizeof(my_metadata_t);
     new_metadata->next = NULL;
     // Add the remaining free slot to the free list.
@@ -163,6 +163,7 @@ void my_free(void *ptr) {
 }
 
 // This is called at the end of each challenge.
+
 void my_finalize() {
   // Nothing is here for now.
   // feel free to add something if you want!

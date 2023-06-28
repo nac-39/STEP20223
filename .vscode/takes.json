@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "g++ build active file",
+      "type": "shell",
+      "command": "g++",
+      "args": ["-std=c++11", "${file}", "-o", "${fileBasenameNoExtension}"]
+    },
+    {
+      "label": "my build",
+      "type": "shell",
+      "command": "g++",
+      "args": ["-std=c++11", "${file}", "-o", "${fileBasenameNoExtension}", "-lboost_thread"]
+    },
+    {
+      "label": "my make",
+      "type": "shell",
+      "command": "make",
+      "args": [],
+      "group": "build"
+    },
+    {
+      "label": "my make clean",
+      "type": "shell",
+      "command": "make",
+      "args": ["clean"],
+      "group": "build"
+    }
+  ]
+}
