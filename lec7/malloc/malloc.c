@@ -48,32 +48,47 @@ my_heap_t my_heap[4];
 
 void my_add_to_free_list(my_metadata_t *metadata) {
   assert(!metadata->next);
-  // assert(!metadata->prev);
   int N = 4;
   int bin[] = {32, 128, 512, 1024};
+  int index = 0;
   bool flag = false;
+
+  // どのbinに入れるか探す
   for (int i = 0; i < N; i++) {
     if (metadata->size <= bin[i]) {
-      my_metadata_t *cur = my_heap[i].free_head;
-      // 前から追加するべき場所を探す
-      while (cur) {
-        if (cur->size > metadata->size) {
-          metadata->next = cur;
-          metadata->prev = cur->prev;
-          cur = metadata;
-          flag = true;
-        }
-        cur = cur->next;
-      }
-      printf("add to free list\n");
-      // 一番最後に追加する場合
-      if (!flag) {
-        metadata->next = &my_heap[i].dummy;
-        my_heap[i].free_head = metadata;
-      }
+      index = i;
+      break;
     }
-    if (flag) break;
   }
+
+  my_metadata_t *cur = my_heap[index].free_head;
+  // 前から追加するべき場所を探す
+  while (cur) {
+    if (cur->size > metadata->size) {
+      metadata->next = cur;
+      metadata->prev = cur->prev;
+      flag = true;
+      break;
+    }
+    if (!cur->next) {
+      cur->prev = metadata;
+      metadata->prev = cur->prev;
+      metadata->next = &my_heap[index].dummy;
+      flag = true;
+      break;
+    }
+    cur = cur->next;
+  }
+  // 一番最後に追加する場合
+
+  // リストの描画
+  my_metadata_t *cur2 = my_heap[index].free_head;
+  printf("free list: ");
+  while (cur2) {
+    printf("%p ", cur2->next);
+    cur2 = cur2->next;
+  }
+  printf("\n");
 }
 
 my_metadata_t *my_get_free_head(size_t size) {
@@ -88,14 +103,9 @@ my_metadata_t *my_get_free_head(size_t size) {
 }
 
 void my_remove_from_free_list(my_metadata_t *metadata, my_metadata_t *prev) {
-  // if (prev) {
-  //   prev->next = metadata->next;
-  //   metadata->next->prev = prev;
-  // } else {
   // 双方向リストの削除
   metadata->prev->next = metadata->next;
   metadata->next->prev = metadata->prev;
-  // }
   metadata->next = NULL;
   metadata->prev = NULL;
   printf("free!\n");
@@ -111,6 +121,7 @@ void my_initialize() {
     my_heap[i].free_head = &my_heap[i].dummy;
     my_heap[i].dummy.size = 0;
     my_heap[i].dummy.next = NULL;
+    my_heap[i].dummy.prev = NULL;
   }
 }
 
@@ -121,6 +132,8 @@ void my_initialize() {
 void *my_malloc(size_t size) {
   printf("my_malloc(%zu)\n", size);
   my_metadata_t *metadata = my_get_free_head(size);
+  // printf("metadata: %p\n", metadata);
+  // printf("metadata->next: %p\n", metadata->next);
   my_metadata_t *prev = NULL;
   my_metadata_t *best_fit = NULL;
   my_metadata_t *best_fit_prev = NULL;
@@ -142,6 +155,7 @@ void *my_malloc(size_t size) {
     // and prev is the previous entry.
 
     if (!metadata) {
+      printf("metadata is NULL\n");
       // 開いているスロットがない場合はOSに新しいメモリを要求する　
       // There was no free slot available. We need to request a new memory
       // region from the system by calling mmap_from_system().
