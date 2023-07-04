@@ -2,6 +2,15 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "type": "process",
+      "label": "run",
+      "args": ["malloc_challenge.bin"],
+      "command": "make",
+      "options": {
+        "cwd": "${workspaceFolder}/lec7/malloc"
+      }
+    },
+    {
       "label": "g++ build active file",
       "type": "shell",
       "command": "g++",

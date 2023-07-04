@@ -5,11 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(lldb) Attach",
+            "name": "Run lec7 malloc",
             "type": "cppdbg",
-            "request": "attach",
-            "program": "enter program name, for example ${workspaceFolder}/a.out",
-            "MIMode": "lldb"
+            "program": "${workspaceFolder}/lec7/malloc/malloc_challenge.bin",
+            "MIMode": "lldb",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/lec7/malloc",
+            "preLaunchTask": "run"
         },
         {
             "name": "Python: Current File",
